@@ -28,6 +28,7 @@ var server = http.createServer(app);
 
 testConnection((err, conn) => {
   if(err) return console.log('error en la conexion de la bd', err);
+  console.log('conexion a base de datos exitosa');
   server.listen(port);
   server.on('error', onError);
   server.on('listening', onListening);

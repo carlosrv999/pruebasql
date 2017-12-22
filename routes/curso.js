@@ -9,6 +9,7 @@ router.route('/')
 
 router.route('/:id')
   .get(Curso.getById)
+  .patch(Curso.save)
 
 router.route('/:id/pruebas')
   .get(Curso.getPruebas)

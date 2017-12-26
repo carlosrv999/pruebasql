@@ -1,20 +1,36 @@
-const { client } = require('../config/db');
 const pg = require('knex')({ client: 'pg' });
 
-const tabla = 'prueba';
+const tabla = 'cgl_country';
 
-module.exports = class Prueba {
+module.exports = class Country {
   constructor(obj) {
-    this.id = obj.id ? obj.id : undefined;
-    this.name = obj.name ? obj.name : undefined;
+    this.id = obj && obj.id || undefined;
+    this.code = obj && obj.code || undefined;
+    this.name = obj && obj.name || undefined;
+    this.status = obj && obj.status || undefined;
+    this.description = obj && obj.description || undefined;
   };
+
+  save(client) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let updated = new Country(this);
+        delete updated.id;
+        let query = pg(tabla).where('id', this.id).update(updated).returning('*').toString();
+        let result = await client.query(query);
+        resolve(result.rows[0]);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
 
   static create(client, obj) {
     return new Promise(async (resolve, reject) => {
       try {
         let query = pg(tabla).insert(obj).returning('*').toString();
         let results = await client.query(query);
-        resolve(results);
+        resolve(results.rows[0]);
       } catch (error) {
         reject(error);
       }
@@ -46,25 +62,11 @@ module.exports = class Prueba {
     });
   }
 
-  static getCursos(client, id_prueba) {
+  static getPorts(client, id) {
     return new Promise(async (resolve, reject) => {
       try {
-        let query = pg(tabla).join('prueba_curso', `${tabla}.id`, `prueba_curso.id_prueba`)
-          .join('curso', 'prueba_curso.id_curso', 'curso.id')
-          .where(`${tabla}.id`, id_prueba)
-          .select('curso.id', 'curso.name').toString();
-        let results = await client.query(query);
-        resolve(results.rows);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  static assignCurso(client, id, fk) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        let query = pg('prueba_curso').insert({ id_curso: fk, id_prueba: id }).returning('*').toString();
+        let query = pg(tabla).join('cgl_port', `${tabla}.id`, 'cgl_port.countryId').select('cgl_port.*').where(`${tabla}.id`, id).toString();
+        console.log(query);
         let results = await client.query(query);
         resolve(results.rows);
       } catch (error) {

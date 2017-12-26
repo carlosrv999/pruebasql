@@ -1,0 +1,82 @@
+const pg = require('knex')({ client: 'pg' });
+
+const tabla = 'cgl_port';
+const belongTable1 = 'cgl_country';
+const fk = 'countryId';
+
+module.exports = class Port {
+  constructor(obj) {
+    this.id = obj && obj.id || undefined;
+    this.code = obj && obj.code || undefined;
+    this.name = obj && obj.name || undefined;
+    this.status = obj && obj.status || undefined;
+    this.description = obj && obj.description || undefined;
+    this.countryId = obj && obj.countryId || undefined;
+  };
+
+  save(client) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let updated = new Port(this);
+        delete updated.id;
+        let query = pg(tabla).where('id', this.id).update(updated).returning('*').toString();
+        let result = await client.query(query);
+        resolve(result.rows[0]);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static create(client, obj) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let query = pg(tabla).insert(obj).returning('*').toString();
+        console.log(query);
+        let results = await client.query(query);
+        resolve(results.rows[0]);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static get(client) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let query = pg(tabla).select().toString();
+        let results = await client.query(query);
+        resolve(results.rows);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static getIncludeCountries(client) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let query = pg(tabla)
+          .leftJoin(belongTable1, `${tabla}.${fk}`, `${belongTable1}.id`)
+          .select(`${tabla}.*`, pg.raw(`to_json(${belongTable1}.*) as country`)).toString();
+        let results = await client.query(query);
+        resolve(results.rows);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  static getById(client, id) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let query = pg(tabla).select().where('id', id).toString();
+        let results = await client.query(query);
+        if (results.rows.length > 0) resolve(results.rows[0]);
+        else resolve(null);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+}
